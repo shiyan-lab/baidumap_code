@@ -1,0 +1,139 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+    <title>行政区边界查询</title>
+    <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css"/> 
+    <style>
+        html,body,#container{
+            margin:0;
+			width:290px;
+            height:530px;
+        }       
+		.amap-icon img{
+            width: 25px;
+            height: 34px;
+        }	
+    </style>
+</head>
+<body>
+<div id="container"></div>
+<script type="text/javascript" src="https://webapi.amap.com/maps?v=1.4.14&key=b3f50f51241f1e26c43b72b9c460c09f&plugin=AMap.DistrictSearch"></script>
+<script type="text/javascript" src="https://cache.amap.com/lbs/static/addToolbar.js"></script>
+<!-- UI组件库 1.0 -->
+<script src="https://webapi.amap.com/ui/1.0/main.js?v=1.0.11"></script>
+<script type="text/javascript">
+    //初始化地图对象，加载地图
+    var map = new AMap.Map("container", {
+        resizeEnable: true,
+        center: [112.490867,32.992096],//地图中心点		
+        zoom:10 //地图显示的缩放级别
+    });
+	
+	
+	//map.clearMap();  // 清除地图覆盖物
+
+    var markers = [{
+        icon: 'https://a.amap.com/jsapi_demos/static/demo-center/icons/poi-marker-1.png',
+        position: [112.606295,33.122555],
+		extData:{url:'http://www.baidu.com',content:'蒲山镇位于卧龙区北部，距市中心16千米。'},
+		title:'蒲山镇',		
+    }, {
+        icon: 'https://a.amap.com/jsapi_demos/static/demo-center/icons/poi-marker-2.png',
+        position: [112.424349,33.021045],
+		extData:{url:'http://www.baidu.com',content:'蒲山镇位于卧龙区北部，距市中心16千米。'},
+		title:'蒲山镇'
+    }, {
+        icon: 'https://a.amap.com/jsapi_demos/static/demo-center/icons/poi-marker-3.png',
+        position: [112.630604,33.189209],
+		extData:{url:'http://www.baidu.com',content:'蒲山镇位于卧龙区北部，距市中心16千米。'},
+		title:'蒲山镇'
+    }, {
+        icon: 'https://a.amap.com/jsapi_demos/static/demo-center/icons/poi-marker-4.png',
+        position: [112.419252,33.201065],
+		extData:{url:'http://www.baidu.com',content:'蒲山镇位于卧龙区北部，距市中心16千米。'},
+		title:'蒲山镇'
+		
+    }];
+
+    // 添加一些分布不均的点到地图上
+    markers.forEach(function(marker) {
+	
+		 var marker = new AMap.Marker({
+            map: map,
+            icon: marker.icon,
+            position: [marker.position[0], marker.position[1]],
+            offset: new AMap.Pixel(-13, -30),
+			extData:marker.extData,
+			title:marker.title	
+        });
+	
+		AMapUI.loadUI(['overlay/SimpleInfoWindow'], function(SimpleInfoWindow) {
+
+			var infoWindow = new SimpleInfoWindow({
+				
+				infoTitle: '<strong>'+marker.getTitle()+'</strong>',
+				infoBody: '<p class="my-desc">'+marker.getExtData().content+' <br/><a href="'+marker.getExtData().url+'">查看更多</a></p>',
+	
+				//基点指向marker的头部位置
+				offset: new AMap.Pixel(0, -31)
+			});
+	
+			function openInfoWin() {
+				infoWindow.open(map, marker.getPosition());
+			}
+	
+			//marker 点击时打开
+			AMap.event.addListener(marker, 'click', function() {
+				openInfoWin();
+			});
+			
+    	});
+	
+		
+    });
+    
+    var district = null;
+    var polygons=[];
+    function drawBounds() {
+        //加载行政区划插件
+        if(!district){
+            //实例化DistrictSearch
+            var opts = {
+                subdistrict: 1,   //获取边界不需要返回下级行政区
+                extensions: 'all',  //返回行政区边界坐标组等具体信息
+                level: 'district',  //查询行政级别为 区/县
+				//showbiz:true
+            };
+            district = new AMap.DistrictSearch(opts);
+        }
+        //行政区查询
+        district.setLevel('district')
+        district.search('卧龙区', function(status, result) {
+            map.remove(polygons)//清除上次结果
+            polygons = [];
+            var bounds = result.districtList[0].boundaries;
+            if (bounds) {
+                for (var i = 0, l = bounds.length; i < l; i++) {
+                    //生成行政区划polygon
+                    var polygon = new AMap.Polygon({
+                        strokeWeight: 1,
+                        path: bounds[i],
+                        fillOpacity: 0.4,
+                        fillColor: '#80d8ff',
+                        strokeColor: '#0091ea'
+                    });
+                    polygons.push(polygon);
+                }
+            }
+            map.add(polygons)
+           // map.setFitView(polygons);//视口自适应
+        });
+    }
+    drawBounds();
+	
+</script>
+</body>
+</html>
